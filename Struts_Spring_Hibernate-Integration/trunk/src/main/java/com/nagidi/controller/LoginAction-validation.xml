@@ -1,0 +1,15 @@
+<!DOCTYPE validators PUBLIC "-//Apache Struts//XWork Validator 1.0.3//EN"
+        "http://struts.apache.org/dtds/xwork-validator-1.0.3.dtd">
+<validators>
+    <field name="user.username">
+        <field-validator type="requiredstring">
+           <message key="error.username"/>
+        </field-validator>
+    </field>
+     
+    <field name="user.userpass">
+        <field-validator type="requiredstring">
+            <message key="error.userpass"/>
+        </field-validator>
+    </field>
+</validators>

@@ -1,0 +1,106 @@
+<?xml  version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:lang="http://www.springframework.org/schema/lang"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd
+        http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+	<!-- This bean has been referred fron struts.xml file; So type it correctly; -->
+	<!-- Make scope prototype; This is really important. -->
+	<bean name="editEmployeeAction" class="com.nagidi.controller.EditEmployeeAction"
+		scope="prototype">
+		<property name="employeeService">
+			<ref bean="employeeService" />
+		</property>
+	</bean>
+
+	<bean name="loginAction" class="com.nagidi.controller.LoginAction"
+		scope="prototype">
+		<property name="loginService">
+			<ref bean="loginService" />
+		</property>
+	</bean>
+
+	<bean name="profileAction" class="com.nagidi.controller.ProfileAction"
+		scope="prototype">
+		<property name="loginService">
+			<ref bean="loginService" />
+		</property>
+	</bean>
+
+	<!-- These beans are injected automatically by spring context -->
+	<bean id="employeeDAO" class="com.nagidi.dao.EmployeeDaoImpl">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	<bean id="loginDAO" class="com.nagidi.dao.LoginDaoImpl">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	<bean id="employeeService" class="com.nagidi.service.EmployeeServiceImpl">
+		<property name="employeeDAO" ref="employeeDAO" />
+	</bean>
+	<bean id="loginService" class="com.nagidi.service.LoginServiceImpl">
+		<property name="loginDAO" ref="loginDAO" />
+	</bean>
+
+	<!-- Configure jdbc.properties -->
+	<bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+		p:location="/WEB-INF/jdbc.properties" />
+
+	<!-- Data Source configuration -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close" p:driverClassName="${jdbc.driverClassName}"
+		p:url="${jdbc.databaseurl}" p:username="${jdbc.username}" p:password="${jdbc.password}" />
+
+	<!-- Configure hibernate session factory -->
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation">
+			<value>classpath:hibernate.cfg.xml</value>
+		</property>
+		<property name="configurationClass">
+			<value>org.hibernate.cfg.AnnotationConfiguration</value>
+		</property>
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${jdbc.dialect}</prop>
+				<prop key="hibernate.show_sql">false</prop>
+			</props>
+		</property>
+	</bean>
+
+	<!--Tells Spring framework to read @Transactional annotation for Declarative Transaction Management -->
+	<context:annotation-config />
+
+	<!-- Enables annotation support for Declarative Transaction transaction Management -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+	<!-- Run SQL queries in transactions AND Initialization for TransactionManager -->
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="addEmployee" read-only="false" />
+			<tx:method name="*" />
+		</tx:attributes>
+	</tx:advice>
+
+	<aop:config>
+		<aop:pointcut id="createOperation"
+			expression="execution(* com.nagidi.dao.EmployeeDaoImpl.addEmployee(..))" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="createOperation" />
+	</aop:config>
+
+</beans>
